@@ -1,0 +1,25 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      # Log in bij ECR (gebruikt de rechten van de LabRole)
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+      - REPO_URI=$ECR_REPO_URI
+      
+  build:
+    commands:
+      # Bouw de Docker image (Dockerfile moet in de root staan)
+      - echo "Building Docker image..."
+      - docker build -t $REPO_URI:latest .
+
+  post_build:
+    commands:
+      # Push de image naar ECR
+      - echo "Pushing Docker image to ECR..."
+      - docker push $REPO_URI:latest
+      
+      # [OPTIONEEL] Forceer een ECS Service Deploy
+      # Deze stap vereist een extra CLI-commando om ECS te vertellen de nieuwe image te gebruiken.
+      # - aws ecs update-service --cluster ass2-crud-application-cluster --service assignment2-crudapplication-service --force-new-deployment
